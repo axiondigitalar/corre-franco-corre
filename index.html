@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rumbo · Plan de carrera</title>
+<meta name="theme-color" content="#0b0f14">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0b0f14;--card:#141a22;--card2:#1a222c;--line:#26303d;--tx:#e9eef4;--mut:#8b97a7;
+  --run:#ff7a1a;--walk:#2ec4a0;--warm:#5aa2ff;--hr:#ff4d6d;--spot:#1ed760;--fz:#b28cff;
+  --r:16px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+h2{font-size:22px;margin:4px 0 6px;letter-spacing:-.01em}
+h3{font-size:13px;margin:22px 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.mut{color:var(--mut)}.small{font-size:13px}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;background:linear-gradient(var(--bg) 70%,transparent)}
+.brand{font-weight:800;letter-spacing:.22em;font-size:14px}.brand b{color:var(--run)}
+main{padding:0 16px calc(96px + var(--safe-b));max-width:560px;margin:0 auto}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.eyebrow{font-size:12px;color:var(--run);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 16px;background:var(--card2);border:1px solid var(--line);font-weight:600}
+.btn.pri{background:var(--run);border-color:var(--run);color:#140800}
+.btn.spot{background:var(--spot);border-color:var(--spot);color:#03140a}
+.btn.big{width:100%;padding:16px;font-size:17px;margin-top:14px}
+.btn.ghost{background:transparent}
+.btn.sm{padding:8px 12px;font-size:13px}
+.row{display:flex;gap:10px;align-items:center}.row.wrap{flex-wrap:wrap}.grow{flex:1}
+.strip{display:flex;height:10px;border-radius:6px;overflow:hidden;gap:2px;margin-top:12px}
+.strip i{display:block;height:100%}
+.legend{display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--mut)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--c)}
+.note{border-left:3px solid var(--hr);padding:10px 12px;background:#1d1418;border-radius:0 12px 12px 0;font-size:13px}
+.note ul{margin:6px 0 0;padding-left:18px}
+details.week{border-bottom:1px solid var(--line)}
+details.week summary{list-style:none;padding:12px 0;display:flex;justify-content:space-between;cursor:pointer}
+details.week summary::-webkit-details-marker{display:none}
+.sess{display:flex;align-items:center;gap:10px;padding:8px 0 8px 4px;font-size:14px}
+.chk{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);background:transparent;display:grid;place-items:center;flex:none;padding:0}
+.chk.on{background:var(--walk);border-color:var(--walk);color:#02130e}
+.pill{font-size:12px;padding:3px 8px;border-radius:99px;background:var(--card2);color:var(--mut)}
+/* actividades */
+.act{display:flex;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.act-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:20px;background:#2a1a0e}
+.act-n{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-s{display:flex;gap:14px;margin-top:6px;font-size:13px;color:var(--mut);flex-wrap:wrap}.act-s b{color:var(--tx);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.stat .k{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v small{font-size:12px;color:var(--mut);font-weight:500}
+#map{height:280px;border-radius:var(--r);border:1px solid var(--line);margin-bottom:12px;background:#11161d}
+.chart{width:100%;height:110px;display:block}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right}td:first-child,th:first-child{text-align:left}
+th{font-size:11px;color:var(--mut);text-transform:uppercase;font-weight:600}
+.bars{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:8px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:10px;color:var(--mut)}
+.bars i{display:block;width:100%;background:var(--run);border-radius:5px 5px 2px 2px;min-height:2px}
+.prog{height:10px;background:var(--card2);border-radius:99px;overflow:hidden}.prog i{display:block;height:100%;background:var(--walk)}
+input[type=number],input[type=text]{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--tx);font:inherit;width:100%}
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:rgba(11,15,20,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+.tabs button{flex:1;background:none;border:0;padding:10px 0 9px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--mut)}
+.tabs button.on{color:var(--run)}
+.tabs svg{width:22px;height:22px}
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto}
+.hidden{display:none!important}
+.ov-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.ov-head .t{font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;flex:none;padding:0}
+.ov-body{padding:16px;max-width:560px;margin:0 auto}
+/* timer */
+#timer{display:flex;flex-direction:column;transition:background .4s}
+.t-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 20px}
+#t-label{font-size:46px;font-weight:850;letter-spacing:-.02em;line-height:1}
+#t-sub{color:var(--mut);margin-top:8px}
+#t-clock{font-size:96px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-top:18px;line-height:1}
+#t-rep{margin-top:10px;font-weight:600}
+.t-foot{padding:0 16px calc(16px + var(--safe-b))}
+.t-strip{position:relative;display:flex;height:14px;gap:2px;border-radius:7px;overflow:hidden}
+.t-strip i{display:block;height:100%;opacity:.45}
+.t-strip .pos{position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;border-radius:2px}
+.t-meta{display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin:10px 0 14px}.t-meta b{color:var(--tx);font-variant-numeric:tabular-nums}
+.t-ctl{display:flex;gap:10px}.t-ctl .btn{flex:1;padding:16px}
+/* spotify */
+.sp{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:12px}
+.sp img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--card2);flex:none}
+.sp .meta{flex:1;min-width:0}.sp .meta div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp .ttl{font-weight:650;font-size:14px}.sp .art{font-size:12px;color:var(--mut)}
+.sp .ctl{display:flex;gap:4px}
+.sp .ctl button{width:40px;height:40px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;padding:0}
+.sp .ctl button.pp{background:var(--spot);color:#03140a}
+.sp svg{width:20px;height:20px}
+#timer .sp{margin:0 0 12px;background:rgba(0,0,0,.25)}
+#toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);background:#f2f5f8;color:#0b0f14;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.empty{text-align:center;padding:30px 10px}
+.eyebrow.fz{color:var(--fz)}.btn.fz{background:var(--fz);border-color:var(--fz);color:#140a24}
+.seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:9px;font-weight:600;color:var(--mut)}
+.seg button.on{background:var(--fz);color:#140a24}
+.exl{list-style:none;margin:10px 0 0;padding:0}
+.exl li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.exl li:last-child{border:0}.exl .num{width:22px;height:22px;border-radius:7px;background:#241b36;color:var(--fz);font-size:12px;font-weight:700;display:grid;place-items:center;flex:none}
+details.ex{border-bottom:1px solid var(--line);padding:10px 0}details.ex:last-child{border:0}
+details.ex summary{list-style:none;font-weight:600;cursor:pointer;display:flex;justify-content:space-between}
+details.ex summary::-webkit-details-marker{display:none}
+details.ex p{margin:6px 0 0;font-size:14px}
+.eyebrow.fd{color:var(--walk)}
+.meal{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.meal:last-child{border:0}
+.meal .when{width:74px;flex:none;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+.meal .what{font-size:14px}
+.daytabs{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0 6px}
+.daytabs button{border:1px solid var(--line);background:var(--card2);border-radius:10px;padding:8px 0;font-weight:600;font-size:12px;color:var(--mut)}
+.daytabs button.on{background:var(--walk);border-color:var(--walk);color:#02130e}
+.daytabs button.today{border-color:var(--walk)}
+.plate{display:flex;align-items:center;gap:16px}
+.plate svg{width:110px;height:110px;flex:none}
+.shop label{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.shop label:last-child{border:0}.shop input{width:20px;height:20px;accent-color:var(--walk);flex:none}
+.shop label.got span{text-decoration:line-through;color:var(--mut)}
+.shop .qty{margin-left:auto;color:var(--mut);font-size:13px;white-space:nowrap}
+.week7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px}
+.week7 div{background:var(--card2);border-radius:10px;padding:8px 2px}.week7 b{display:block;font-size:12px;margin-bottom:3px}
+.steps{margin:8px 0 0;padding-left:20px;font-size:14px}.steps li{margin-bottom:6px}
+.leaflet-container{font:inherit}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">RUM<b>BO</b></div>
+  <button class="iconbtn" id="gear" aria-label="Ajustes" style="width:36px;height:36px"><svg style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<main>
+  <section id="v-hoy" class="view active"></section>
+  <section id="v-fz" class="view"></section>
+  <section id="v-food" class="view"></section>
+  <section id="v-corr" class="view"></section>
+  <section id="v-prog" class="view"></section>
+  <section id="v-aj" class="view"></section>
+</main>
+
+<nav class="tabs" id="tabs">
+  <button data-v="hoy" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4" r="2"/><path d="M8 21l3-6 3 3v3M6 12l3-4 5 1 3 4M11 15l-2-3"/></svg>Hoy</button>
+  <button data-v="fz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg>Fuerza</button>
+  <button data-v="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v8a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 0-3 2.5-3 6s1.5 5 3 5v7M17 3v18"/></svg>Comida</button>
+  <button data-v="corr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Corridas</button>
+  <button data-v="prog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progreso</button>
+</nav>
+
+<!-- Cronómetro de sesión -->
+<div id="timer" class="overlay hidden">
+  <div class="ov-head" style="background:transparent;border:0">
+    <div class="t small" id="t-sess"></div>
+    <button class="iconbtn" id="t-close" aria-label="Terminar">✕</button>
+  </div>
+  <div class="t-main">
+    <div id="t-label"></div>
+    <div id="t-sub"></div>
+    <div id="t-clock">0:00</div>
+    <div id="t-rep"></div>
+  </div>
+  <div class="t-foot">
+    <div class="sp-slot"></div>
+    <div class="t-strip" id="t-strip"></div>
+    <div class="t-meta"><span>Transcurrido <b id="t-el">0:00</b></span><span>Restante <b id="t-rem">0:00</b></span></div>
+    <div class="t-ctl">
+      <button class="btn" id="t-pause">Pausa</button>
+      <button class="btn ghost" id="t-skip">Saltar ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalle de actividad -->
+<div id="detail" class="overlay hidden">
+  <div class="ov-head">
+    <button class="iconbtn" id="d-back" aria-label="Volver">‹</button>
+    <div class="t" id="d-title"></div>
+  </div>
+  <div class="ov-body" id="d-body"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+"use strict";
+/* ================= utilidades ================= */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mmss = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}` : `${m}:${String(x).padStart(2,'0')}`; };
+const pace = (sec, m) => m > 50 ? mmss(sec / (m/1000)) : '—';
+const km = m => (m/1000).toFixed(2).replace('.', ',');
+const fmtDate = iso => { const d = new Date(iso); return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}) + ' · ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); };
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
+const FN = '/.netlify/functions/oauth';
+let CFG = null;
+async function config() {
+  if (CFG) return CFG;
+  const r = await fetch(FN).catch(() => null);
+  if (!r || !r.ok) throw new Error('No encuentro la función del servidor. ¿Se desplegó con la carpeta netlify/functions?');
+  CFG = await r.json(); return CFG;
+}
+const redirectUri = () => location.origin + location.pathname;
+
+/* ================= plan ================= */
+const MIN = 60;
+const rep = (n, run, walk) => Array.from({length:n}).flatMap(() => [{t:'run', s:run*MIN}, {t:'walk', s:walk*MIN}]);
+const BLOCKS = [
+  {weeks:[1,2],  title:'Caminata rápida 30′',             main:[{t:'fast', s:30*MIN}]},
+  {weeks:[3,4],  title:'1′ trote · 2′ caminata × 6',      main:rep(6,1,2)},
+  {weeks:[5,6],  title:'2′ trote · 2′ caminata × 6',      main:rep(6,2,2)},
+  {weeks:[7,8],  title:'3′ trote · 2′ caminata × 5',      main:rep(5,3,2)},
+  {weeks:[9,10], title:'5′ trote · 2′ caminata × 4',      main:rep(4,5,2)},
+  {weeks:[11,12],title:'10′ trote · 2′ caminata · 8′ trote', main:[{t:'run',s:600},{t:'walk',s:120},{t:'run',s:480}]}
+];
+const SESS = [];
+for (let w = 1; w <= 12; w++) {
+  const b = BLOCKS.find(x => x.weeks.includes(w));
+  for (let n = 1; n <= 3; n++) SESS.push({id:`w${w}s${n}`, w, n, title:b.title, segs:[{t:'warm',s:300}, ...b.main, {t:'cool',s:300}]});
+}
+const SEG = {
+  warm:{l:'Calentamiento', sub:'Caminá suave', say:'Calentamiento. Caminá suave.', c:'var(--warm)', bg:'#0d1a2b'},
+  run: {l:'Trotá',          sub:'Suave: que puedas hablar en frases cortas', say:'Trotá', c:'var(--run)', bg:'#2a1405'},
+  walk:{l:'Caminá',         sub:'Recuperá el aire', say:'Caminá', c:'var(--walk)', bg:'#06231c'},
+  fast:{l:'Caminata rápida',sub:'Paso firme y constante', say:'Caminata rápida', c:'var(--walk)', bg:'#06231c'},
+  cool:{l:'Enfriamiento',   sub:'Caminá suave y soltá', say:'Enfriamiento. Caminá suave.', c:'var(--warm)', bg:'#0d1a2b'}
+};
+SEG.fwarm = {l:'Entrada en calor', sub:'Marcha en el lugar, círculos de brazos y de cadera', say:'Entrada en calor. Marchá en el lugar y mové los brazos.', c:'var(--warm)', bg:'#0d1a2b'};
+SEG.fcool = {l:'Estiramiento', sub:'Piernas, espalda y pecho. Sin rebotes, respirando', say:'Muy bien. Ahora estiramos, suave y respirando.', c:'var(--warm)', bg:'#0d1a2b'};
+
+/* ===== fuerza: biblioteca (casa y plaza) ===== */
+const EX = {
+  sentSilla:   {n:'Sentadilla a la silla', cue:'Bajá controlado hasta rozar la silla y subí empujando con los talones.', ez:'Sentate del todo y levantate ayudándote con las manos.'},
+  sentBanco:   {n:'Sentadilla al banco', cue:'Bajá hasta rozar el banco de la plaza y subí empujando con los talones.', ez:'Sentate del todo y levantate con ayuda de las manos.'},
+  sentLibre:   {n:'Sentadilla', cue:'Pies al ancho de hombros, cadera atrás, pecho arriba, rodillas en línea con los pies.', ez:'Con una silla o banco atrás como referencia.'},
+  sentMochila: {n:'Sentadilla con mochila', cue:'Mochila con botellas de agua abrazada al pecho. Bajá lento, subí firme.', ez:'Sin mochila o con menos botellas.'},
+  sentPausa:   {n:'Sentadilla con pausa', cue:'Bajá y quedate 2 segundos abajo antes de subir.', ez:'Sin pausa, o al banco.'},
+  flexPared:   {n:'Flexiones en la pared', cue:'Manos en la pared a la altura del pecho, cuerpo recto: llevá el pecho a la pared y empujá.', ez:'Pies más cerca de la pared.'},
+  flexMesa:    {n:'Flexiones inclinadas', cue:'Manos en una mesa firme o la mesada, cuerpo en línea recta.', ez:'En la pared.'},
+  flexBanco:   {n:'Flexiones en el banco', cue:'Manos en el borde o respaldo del banco, cuerpo recto, pecho al banco.', ez:'En una baranda o barra más alta.'},
+  flexBarra:   {n:'Flexiones en barra baja', cue:'Manos en una barra a la altura de la cadera, cuerpo recto.', ez:'En el banco o en una barra más alta.'},
+  flexRod:     {n:'Flexiones con rodillas', cue:'Rodillas en el piso (con algo blando), cadera alineada, bajá el pecho.', ez:'Inclinadas en una mesa.'},
+  puente:      {n:'Puente de glúteos', cue:'Boca arriba, rodillas flexionadas: subí la cadera apretando glúteos, 1 segundo arriba.', ez:'Menos recorrido.'},
+  puente1:     {n:'Puente a una pierna', cue:'Como el puente, con una pierna estirada. Cambiá de pierna a mitad del tiempo.', ez:'Puente con las dos piernas.'},
+  remoMochila: {n:'Remo con mochila', cue:'Inclinado con la espalda recta y una mano en la silla: llevá la mochila hacia el ombligo. Cambiá de brazo a mitad.', ez:'Con menos botellas.'},
+  remoBarra:   {n:'Remo australiano', cue:'Colgado de una barra a la altura del pecho, pies en el piso y cuerpo inclinado: llevá el pecho a la barra.', ez:'Pies más cerca de la barra, cuerpo más vertical.'},
+  planchaInc:  {n:'Plancha inclinada', cue:'Antebrazos en la mesa o el sillón, cuerpo recto. Respirá normal, no aguantes el aire.', ez:'Más vertical, en la pared.'},
+  planchaBanco:{n:'Plancha en el banco', cue:'Antebrazos en el banco, cuerpo recto, abdomen firme. Respirá normal.', ez:'Manos en una baranda más alta.'},
+  planchaRod:  {n:'Plancha con rodillas', cue:'Antebrazos y rodillas en el piso, cuerpo en línea. Respirá normal.', ez:'Plancha inclinada.'},
+  plancha:     {n:'Plancha', cue:'Antebrazos y puntas de pie, abdomen firme. Respirá normal.', ez:'Rodillas apoyadas.'},
+  marcha:      {n:'Marcha con rodillas altas', cue:'En el lugar, sin saltar, braceando fuerte.', ez:'Rodillas más bajas, ritmo cómodo.'},
+  stepJack:    {n:'Jumping jacks sin salto', cue:'Abrí una pierna al costado mientras subís los brazos, alternando lados.', ez:'Solo brazos, marchando.'},
+  boxeo:       {n:'Boxeo de sombra', cue:'Golpes al aire con rodillas flexionadas y moviendo los pies.', ez:'Golpes más lentos.'},
+  talones:     {n:'Elevación de talones', cue:'Apoyado en la pared, subí a puntas de pie y bajá lento.', ez:'Menos altura.'},
+  talonesCord: {n:'Talones en el cordón', cue:'Puntas de pie en el borde de un cordón o escalón, agarrado de algo: subí y bajá lento.', ez:'En el piso plano.'},
+  birdDog:     {n:'Bird dog', cue:'En cuatro patas, estirá brazo y pierna contrarios, alternando lento.', ez:'Solo piernas o solo brazos.'},
+  zancadaApoyo:{n:'Zancada atrás con apoyo', cue:'Una mano en una silla, baranda o banco. Paso largo atrás y bajá la rodilla. Alterná.', ez:'Paso más corto y menos profundo.'},
+  zancada:     {n:'Zancadas alternas', cue:'Paso atrás alternando piernas, torso erguido.', ez:'Con apoyo en una silla o baranda.'},
+  escalon:     {n:'Subida al escalón', cue:'Primer escalón de la escalera: subí y bajá alternando la pierna que arranca.', ez:'Escalón más bajo, agarrado de la baranda.'},
+  escalonBanco:{n:'Subida al banco', cue:'Banco bajo y firme o un cordón alto: subí y bajá alternando la pierna.', ez:'Cordón o escalón más bajo.'},
+  colgarse:    {n:'Colgarse de la barra', cue:'Agarrá una barra alta y descargá peso con los pies apoyados en el piso. Hombros firmes.', ez:'Más peso en los pies.'}
+};
+const FLEVELS = [
+  {weeks:[1,2,3,4],    lvl:1, rounds:2, work:30, rest:30, roundRest:60, title:'Nivel 1 · Base',
+    slots:[['sentSilla','sentBanco'],['flexPared','flexBanco'],['marcha','marcha'],['puente','puente'],['remoMochila','remoBarra'],['planchaInc','planchaBanco'],['talones','talonesCord']]},
+  {weeks:[5,6,7,8],    lvl:2, rounds:3, work:40, rest:20, roundRest:60, title:'Nivel 2 · Más volumen',
+    slots:[['sentLibre','sentLibre'],['flexMesa','flexBanco'],['stepJack','stepJack'],['zancadaApoyo','zancadaApoyo'],['remoMochila','remoBarra'],['planchaRod','planchaBanco'],['escalon','escalonBanco'],['birdDog','colgarse']]},
+  {weeks:[9,10,11,12], lvl:3, rounds:3, work:45, rest:15, roundRest:60, title:'Nivel 3 · Más intensidad',
+    slots:[['sentMochila','sentPausa'],['flexRod','flexBarra'],['boxeo','boxeo'],['zancada','zancada'],['remoMochila','remoBarra'],['plancha','plancha'],['puente1','puente1'],['escalon','escalonBanco']]}
+];
+const lugarPref = () => store.get('cr_lugar', 'casa');
+function buildF(w, n, lugar) {
+  const L = FLEVELS.find(l => l.weeks.includes(w)), ids = L.slots.map(s => s[lugar === 'plaza' ? 1 : 0]);
+  const segs = [{t:'fwarm', s:240}];
+  for (let r = 1; r <= L.rounds; r++) ids.forEach((id, i) => {
+    segs.push({t:'ex', s:L.work, ex:id, r, i, R:L.rounds, N:ids.length});
+    const last = i === ids.length - 1;
+    if (last && r === L.rounds) return;
+    segs.push({t:'rest', s:last ? L.roundRest : L.rest, next:last ? ids[0] : ids[i + 1], rnd:last});
+  });
+  segs.push({t:'fcool', s:240});
+  return {id:`f${w}s${n}`, kind:'fz', w, n, title:L.title, lugar, L, ids, segs};
+}
+const FIDS = [];
+for (let w = 1; w <= 12; w++) for (let n = 1; n <= 3; n++) FIDS.push({id:`f${w}s${n}`, w, n});
+function findSess(id, lugar) {
+  const m = /^f(\d+)s(\d)$/.exec(id);
+  if (m) return buildF(+m[1], +m[2], lugar || lugarPref());
+  return SESS.find(s => s.id === id);
+}
+function meta(seg) {
+  if (seg.t === 'ex') { const e = EX[seg.ex]; return {l:e.n, sub:e.cue, say:`${e.n}. ${seg.s} segundos.`, c:'var(--fz)', bg:'#1b1230'}; }
+  if (seg.t === 'rest') { const e = EX[seg.next];
+    return seg.rnd ? {l:'Descanso', sub:`Fin de la vuelta · Sigue: ${e.n}`, say:`Terminaste la vuelta. Descansá un minuto. Sigue ${e.n}.`, c:'var(--mut)', bg:'#11161d'}
+                   : {l:'Descanso', sub:`Sigue: ${e.n}`, say:`Descanso. Sigue ${e.n}.`, c:'var(--mut)', bg:'#11161d'}; }
+  return SEG[seg.t];
+}
+const totalOf = s => s.segs.reduce((a, x) => a + x.s, 0);
+const stripHTML = segs => segs.map(x => `<i style="flex:${x.s};background:${meta(x).c}"></i>`).join('');
+const doneMap = () => store.get('cr_done', {});
+
+/* ================= vista HOY ================= */
+function renderHoy() {
+  const done = doneMap();
+  const next = SESS.find(s => !done[s.id]);
+  const todayKey = new Date().toDateString();
+  const trainedToday = Object.entries(done).some(([k, d]) => k[0] === 'w' && new Date(d).toDateString() === todayKey);
+  let h = '';
+  if (!next) {
+    h += `<div class="card"><div class="eyebrow">Plan completo</div><h2>¡Terminaste las 12 semanas! 🏁</h2><p class="mut">Ya podés trotar 20 minutos seguidos. Hablá con tu médico para el próximo objetivo (por ejemplo, 5 km).</p></div>`;
+  } else {
+    const runs = next.segs.filter(x => x.t === 'run').length;
+    h += `<div class="card">
+      <div class="eyebrow">Semana ${next.w} · Sesión ${next.n} de 3</div>
+      <h2>${next.title}</h2>
+      <div class="mut small">${Math.round(totalOf(next)/60)} min en total · incluye 5′ de calentamiento y 5′ de enfriamiento${runs ? ` · ${runs} tramos de trote` : ''}</div>
+      <div class="strip">${stripHTML(next.segs)}</div>
+      <div class="legend"><span style="--c:var(--warm)">Suave</span><span style="--c:var(--walk)">Caminar</span>${runs ? '<span style="--c:var(--run)">Trotar</span>' : ''}</div>
+      ${trainedToday ? `<p class="small" style="color:var(--walk);margin:12px 0 0">Hoy ya entrenaste. Lo ideal es descansar un día entre sesiones.</p>` : ''}
+      <button class="btn pri big" id="start">▶ Empezar sesión</button>
+      <p class="small mut" style="margin:10px 0 0">Antes de arrancar, iniciá <b>Correr</b> en el reloj para que grabe GPS, pulso y pasos.</p>
+    </div>`;
+  }
+  h += fzCard(true);
+  h += foodToday();
+  h += `<div class="sp-slot"></div>`;
+  const acts = store.get('cr_acts', null);
+  if (acts && acts.list && acts.list[0]) {
+    const a = acts.list[0];
+    h += `<h3>Última actividad</h3>` + actCard(a);
+  }
+  h += `<div class="note"><b>Pará y consultá si aparece:</b><ul><li>Dolor u opresión en el pecho</li><li>Mareo o sensación de desmayo</li><li>Palpitaciones que no se calman al frenar</li><li>Falta de aire desproporcionada</li></ul></div>`;
+  h += `<h3>Plan completo · 12 semanas</h3><div class="card" style="padding:4px 16px">`;
+  for (let w = 1; w <= 12; w++) {
+    const ss = SESS.filter(s => s.w === w), d = ss.filter(s => done[s.id]).length;
+    h += `<details class="week" ${next && next.w === w ? 'open' : ''}><summary><span><b>Semana ${w}</b> <span class="mut small">· ${ss[0].title}</span></span><span class="pill">${d}/3</span></summary>`;
+    ss.forEach(s => {
+      const on = !!done[s.id];
+      h += `<div class="sess"><button class="chk ${on ? 'on' : ''}" data-tog="${s.id}" aria-label="Marcar">${on ? '✓' : ''}</button><span class="grow">Sesión ${s.n}</span><span class="small mut">${on ? new Date(done[s.id]).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : Math.round(totalOf(s)/60) + ' min'}</span></div>`;
+    });
+    h += `</details>`;
+  }
+  h += `</div>`;
+  $('#v-hoy').innerHTML = h;
+  $('#start')?.addEventListener('click', () => startTimer(next.id));
+  bindFz($('#v-hoy'));
+  $('#v-hoy').querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+  bindTog($('#v-hoy'));
+  bindActCards($('#v-hoy'));
+  renderSpotify();
+}
+
+function bindTog(root) {
+  root.querySelectorAll('[data-tog]').forEach(b => b.addEventListener('click', () => {
+    const m = doneMap(), id = b.dataset.tog;
+    if (m[id]) delete m[id]; else m[id] = new Date().toISOString();
+    store.set('cr_done', m); renderHoy(); renderFuerza(); renderProg();
+  }));
+}
+
+/* ================= vista FUERZA ================= */
+const lugarSeg = () => { const l = lugarPref(); return `<div class="seg" role="tablist"><button data-lugar="casa" class="${l === 'casa' ? 'on' : ''}">🏠 Casa</button><button data-lugar="plaza" class="${l === 'plaza' ? 'on' : ''}">🌳 Plaza</button></div>`; };
+function fzCard(compact) {
+  const done = doneMap(), nx = FIDS.find(x => !done[x.id]);
+  if (!nx) return `<div class="card"><div class="eyebrow fz">Fuerza</div><h2>¡Completaste los 3 niveles! 💪</h2><p class="mut small">Podés repetir el nivel 3 sumando más botellas a la mochila.</p></div>`;
+  const s = findSess(nx.id), today = new Date().toDateString();
+  const fzToday = Object.entries(done).some(([k, d]) => k[0] === 'f' && new Date(d).toDateString() === today);
+  let h = `<div class="card"><div class="eyebrow fz">Fuerza · Semana ${s.w} · Sesión ${s.n} de 3</div>
+    <h2>${s.title}</h2>
+    <div class="mut small">${Math.round(totalOf(s) / 60)} min · ${s.L.rounds} vueltas de ${s.ids.length} ejercicios · ${s.L.work}″ de trabajo y ${s.L.rest}″ de pausa</div>
+    <div style="margin-top:12px">${lugarSeg()}</div>`;
+  if (!compact) h += `<ol class="exl">${s.ids.map((id, i) => `<li><span class="num">${i + 1}</span><span>${EX[id].n}</span></li>`).join('')}</ol>`;
+  else h += `<div class="small mut" style="margin-top:10px">${s.ids.map(id => EX[id].n).join(' · ')}</div>`;
+  if (fzToday) h += `<p class="small" style="color:var(--fz);margin:12px 0 0">Hoy ya hiciste fuerza. Mejor dejar un día de descanso entre sesiones.</p>`;
+  h += `<button class="btn fz big" data-fzstart="${s.id}">▶ Empezar fuerza</button></div>`;
+  return h;
+}
+function bindFz(root) {
+  root.querySelectorAll('[data-lugar]').forEach(b => b.addEventListener('click', () => { store.set('cr_lugar', b.dataset.lugar); renderHoy(); renderFuerza(); }));
+  root.querySelectorAll('[data-fzstart]').forEach(b => b.addEventListener('click', () => startTimer(b.dataset.fzstart)));
+}
+function renderFuerza() {
+  const done = doneMap(), nx = FIDS.find(x => !done[x.id]), lugar = lugarPref();
+  const L = FLEVELS.find(l => l.weeks.includes(nx ? nx.w : 12));
+  let h = fzCard(false);
+  h += `<h3>Semana sugerida</h3><div class="card"><div class="week7">
+    ${[['Lun','🏃','Trote'],['Mar','💪','Fuerza'],['Mié','🏃','Trote'],['Jue','💪','Fuerza'],['Vie','🏃','Trote'],['Sáb','💪','Fuerza'],['Dom','🚶','Libre']].map(d => `<div><b>${d[0]}</b>${d[1]}<br>${d[2]}</div>`).join('')}
+  </div><p class="small mut" style="margin:10px 0 0">El domingo, una caminata tranquila o descanso. Si un día estás muy cansado, movelo: lo importante es no hacer fuerza dos días seguidos.</p></div>`;
+  h += `<h3>Cómo hacer cada ejercicio · ${lugar === 'plaza' ? 'Plaza' : 'Casa'}</h3><div class="card" style="padding:4px 16px">`;
+  L.slots.map(s => s[lugar === 'plaza' ? 1 : 0]).forEach(id => {
+    const e = EX[id];
+    h += `<details class="ex"><summary><span>${e.n}</span><span class="mut">＋</span></summary><p>${e.cue}</p><p class="mut">Más fácil: ${e.ez}</p></details>`;
+  });
+  h += `</div>`;
+  h += `<div class="note" style="border-color:var(--fz);background:#18122a"><b>Reglas de oro</b><ul>
+    <li>No aguantes el aire: soltalo cuando hacés fuerza.</li>
+    <li>Terminá cada ejercicio sintiendo que podrías hacer 2 o 3 repeticiones más.</li>
+    <li>Si algo <i>duele</i> (no cansancio, dolor), pasá a la versión fácil o salteá ese ejercicio.</li>
+    ${lugar === 'plaza' ? '<li>Antes de usarlos, probá que bancos y barras estén firmes.</li>' : '<li>Mochila: arrancá con 2 o 3 botellas de 1,5 L y sumá de a una.</li>'}
+    <li>Mismas señales de alarma que en el trote: dolor de pecho, mareo o palpitaciones que no paran → frená y consultá.</li></ul></div>`;
+  h += `<h3>Plan de fuerza · 12 semanas</h3><div class="card" style="padding:4px 16px">`;
+  for (let w = 1; w <= 12; w++) {
+    const ss = FIDS.filter(x => x.w === w), d = ss.filter(x => done[x.id]).length, Lw = FLEVELS.find(l => l.weeks.includes(w));
+    h += `<details class="week" ${nx && nx.w === w ? 'open' : ''}><summary><span><b>Semana ${w}</b> <span class="mut small">· Nivel ${Lw.lvl}</span></span><span class="pill">${d}/3</span></summary>`;
+    ss.forEach(x => { const on = !!done[x.id];
+      h += `<div class="sess"><button class="chk ${on ? 'on' : ''}" data-tog="${x.id}" aria-label="Marcar">${on ? '✓' : ''}</button><span class="grow">Sesión ${x.n}</span><span class="small mut">${on ? new Date(done[x.id]).toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : Math.round(totalOf(findSess(x.id)) / 60) + ' min'}</span></div>`; });
+    h += `</details>`;
+  }
+  h += `</div>`;
+  $('#v-fz').innerHTML = h;
+  bindFz($('#v-fz')); bindTog($('#v-fz'));
+}
+
+/* ================= cronómetro ================= */
+let T = null, tickI = null, wake = null, actx = null;
+function beep(freq = 880, dur = .15, when = 0) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + when;
+    o.frequency.value = freq; o.type = 'sine';
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.5, t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + .05);
+  } catch {}
+}
+function say(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'es-AR'; u.rate = 1;
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('es'));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+async function keepAwake() { try { if ('wakeLock' in navigator && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => wake = null); } } catch {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && T) { keepAwake(); tick(); } });
+
+function elapsed() { if (!T) return 0; const now = Date.now(); return (now - T.startedAt - T.pausedAcc - (T.pausedAt ? now - T.pausedAt : 0)) / 1000 + T.skip; }
+function startTimer(id) {
+  beep(660, .01); // desbloquea el audio con el toque del usuario
+  T = {id, lugar: id[0] === 'f' ? lugarPref() : null, startedAt: Date.now(), pausedAcc: 0, pausedAt: 0, skip: 0, idx: -1, lastBeep: -1};
+  store.set('cr_timer', T); openTimer();
+}
+function openTimer() {
+  const s = findSess(T.id, T.lugar);
+  $('#t-sess').textContent = (s.kind === 'fz' ? `Fuerza · ${s.lugar === 'plaza' ? 'Plaza' : 'Casa'} · ` : 'Trote · ') + `Semana ${s.w} · Sesión ${s.n}`;
+  $('#t-strip').innerHTML = stripHTML(s.segs) + '<span class="pos"></span>';
+  $('#timer').classList.remove('hidden');
+  $('#t-pause').textContent = T.pausedAt ? 'Seguir' : 'Pausa';
+  keepAwake(); clearInterval(tickI); tickI = setInterval(tick, 250); tick(); renderSpotify();
+}
+function tick() {
+  if (!T) return;
+  const s = findSess(T.id, T.lugar), segs = s.segs, tot = totalOf(s), el = elapsed();
+  let acc = 0, i = 0;
+  for (; i < segs.length; i++) { if (el < acc + segs[i].s) break; acc += segs[i].s; }
+  if (i >= segs.length) return finishTimer(true);
+  const seg = segs[i], left = acc + seg.s - el, M = meta(seg);
+  if (i !== T.idx) {
+    const first = T.idx === -1; T.idx = i; T.lastBeep = -1; store.set('cr_timer', T);
+    beep(first ? 660 : 990, .25); beep(first ? 880 : 1320, .3, .3);
+    try { navigator.vibrate && navigator.vibrate([350, 120, 350]); } catch {}
+    const runsTot = segs.filter(x => x.t === 'run').length, runN = segs.slice(0, i + 1).filter(x => x.t === 'run').length;
+    say(M.say + (seg.t === 'run' && runsTot > 1 ? `. Tramo ${runN} de ${runsTot}.` : ''));
+  }
+  const L = Math.ceil(left);
+  if (L <= 3 && L >= 1 && T.lastBeep !== L && !T.pausedAt) { T.lastBeep = L; beep(520, .1); }
+  $('#timer').style.background = M.bg;
+  $('#t-label').textContent = M.l; $('#t-label').style.color = M.c;
+  $('#t-sub').textContent = M.sub;
+  $('#t-label').style.fontSize = M.l.length > 16 ? '34px' : '';
+  $('#t-clock').textContent = mmss(left);
+  const runsTot = segs.filter(x => x.t === 'run').length, runN = segs.slice(0, i + 1).filter(x => x.t === 'run').length;
+  $('#t-rep').textContent = seg.t === 'ex' ? `Vuelta ${seg.r} de ${seg.R} · Ejercicio ${seg.i + 1} de ${seg.N}` : (runsTot > 1 ? `Trote ${Math.max(runN, 0)} de ${runsTot}` : '');
+  $('#t-el').textContent = mmss(el); $('#t-rem').textContent = mmss(tot - el);
+  const pos = document.querySelector('#t-strip .pos'); if (pos) pos.style.left = `calc(${Math.min(100, el / tot * 100)}% - 1px)`;
+}
+$('#t-pause').addEventListener('click', () => {
+  if (!T) return;
+  if (T.pausedAt) { T.pausedAcc += Date.now() - T.pausedAt; T.pausedAt = 0; $('#t-pause').textContent = 'Pausa'; say('Seguimos'); }
+  else { T.pausedAt = Date.now(); $('#t-pause').textContent = 'Seguir'; say('Pausa'); }
+  store.set('cr_timer', T); tick();
+});
+$('#t-skip').addEventListener('click', () => {
+  if (!T) return;
+  const s = findSess(T.id, T.lugar), el = elapsed(); let acc = 0;
+  for (const g of s.segs) { acc += g.s; if (acc > el) { T.skip += acc - el + .05; break; } }
+  store.set('cr_timer', T); tick();
+});
+$('#t-close').addEventListener('click', () => {
+  if (!T) return;
+  const s = findSess(T.id, T.lugar), frac = elapsed() / totalOf(s);
+  if (!confirm('¿Terminar la sesión ahora?')) return;
+  finishTimer(frac > .6 && confirm('Hiciste la mayor parte. ¿La marcamos como completada?'));
+});
+function finishTimer(completed) {
+  clearInterval(tickI); tickI = null;
+  const wasFz = T && T.id[0] === 'f';
+  if (completed && T) { const m = doneMap(); m[T.id] = new Date().toISOString(); store.set('cr_done', m); }
+  store.del('cr_timer'); T = null;
+  try { wake && wake.release(); } catch {} wake = null;
+  $('#timer').classList.add('hidden'); $('#timer').style.background = '';
+  if (completed) { beep(880, .2); beep(1100, .2, .25); beep(1320, .4, .5); say('Sesión completa. ¡Muy bien! Terminá también el ejercicio en el reloj.'); toast(wasFz ? '¡Fuerza completa! Tomá agua y estirá un poco más si querés.' : '¡Sesión completa! Cuando el reloj sincronice, la vas a ver en Corridas.'); }
+  renderHoy(); renderFuerza(); renderProg();
+}
+
+/* ================= Strava ================= */
+const stravaTok = () => store.get('cr_strava', null);
+async function stravaConnect() {
+  try {
+    const c = await config();
+    if (!c.strava_client_id) return toast('Falta STRAVA_CLIENT_ID en Netlify');
+    const st = 'strava-' + Math.random().toString(36).slice(2); store.set('cr_oauth_state', st);
+    location.href = `https://www.strava.com/oauth/authorize?client_id=${c.strava_client_id}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri())}&approval_prompt=auto&scope=read,activity:read_all&state=${st}`;
+  } catch (e) { toast(e.message); }
+}
+async function stravaToken() {
+  let t = stravaTok(); if (!t) return null;
+  if (t.expires_at * 1000 < Date.now() + 60000) {
+    const r = await fetch(FN, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({action:'refresh', refresh_token:t.refresh_token})});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { if (r.status === 400 || r.status === 401) { store.del('cr_strava'); } throw new Error(d.error || 'No pude renovar el acceso a Strava'); }
+    t = {...t, access_token:d.access_token, refresh_token:d.refresh_token, expires_at:d.expires_at}; store.set('cr_strava', t);
+  }
+  return t.access_token;
+}
+async function strava(path) {
+  const tk = await stravaToken(); if (!tk) throw new Error('Conectá Strava en Ajustes');
+  const r = await fetch('https://www.strava.com/api/v3' + path, {headers:{Authorization:'Bearer ' + tk}});
+  if (r.status === 401) { store.del('cr_strava'); throw new Error('Strava pidió volver a conectar'); }
+  if (r.status === 429) throw new Error('Strava: demasiados pedidos, probá en unos minutos');
+  if (!r.ok) throw new Error('Strava respondió ' + r.status);
+  return r.json();
+}
+let loadingActs = false;
+async function loadActs(force) {
+  const c = store.get('cr_acts', null);
+  if (!stravaTok() || loadingActs) return;
+  if (!force && c && Date.now() - c.at < 10 * 60 * 1000) return;
+  loadingActs = true; renderCorr();
+  try {
+    const list = await strava('/athlete/activities?per_page=60');
+    store.set('cr_acts', {at: Date.now(), list: list.map(a => ({
+      id:a.id, name:a.name, sport_type:a.sport_type || a.type, start_date:a.start_date, distance:a.distance,
+      moving_time:a.moving_time, elapsed_time:a.elapsed_time, average_heartrate:a.average_heartrate,
+      average_cadence:a.average_cadence, total_elevation_gain:a.total_elevation_gain, kilojoules:a.kilojoules
+    }))});
+  } catch (e) { toast(e.message); }
+  loadingActs = false; renderCorr(); renderHoy(); renderProg();
+}
+const ICON = t => /Run/.test(t) ? '🏃' : /Walk|Hike/.test(t) ? '🚶' : /Ride|Bike/.test(t) ? '🚴' : '💪';
+function actCard(a) {
+  return `<button class="act" data-act="${a.id}"><div class="act-ic">${ICON(a.sport_type)}</div><div class="grow" style="min-width:0">
+    <div class="act-n">${esc(a.name)}</div><div class="small mut">${fmtDate(a.start_date)}</div>
+    <div class="act-s"><span><b>${km(a.distance)}</b> km</span><span><b>${mmss(a.moving_time)}</b></span><span><b>${pace(a.moving_time, a.distance)}</b> /km</span>${a.average_heartrate ? `<span>♥ <b>${Math.round(a.average_heartrate)}</b></span>` : ''}</div>
+  </div></button>`;
+}
+function bindActCards(root) { root.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.act))); }
+function renderCorr() {
+  let h = '';
+  if (!stravaTok()) {
+    h = `<div class="card"><div class="eyebrow">Datos del reloj</div><h2>Conectá Strava</h2>
+      <p class="mut">El Galaxy Watch graba la corrida, Samsung Health la pasa a Strava y Rumbo la trae con mapa, pulso, calorías y pasos.</p>
+      <ol class="steps"><li>En <b>Samsung Health</b> → Ajustes → Servicios conectados → <b>Strava</b> → conectar.</li><li>Tocá el botón de abajo y aceptá los permisos.</li></ol>
+      <button class="btn pri big" id="cs">Conectar con Strava</button></div>`;
+  } else {
+    const c = store.get('cr_acts', null), list = (c && c.list) || [];
+    h = `<div class="row" style="margin-bottom:12px"><div class="grow small mut">${c ? 'Actualizado ' + new Date(c.at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : ''}</div>
+      <button class="btn sm" id="ra">${loadingActs ? 'Cargando…' : '↻ Actualizar'}</button></div>`;
+    h += list.length ? list.map(actCard).join('') : `<div class="card empty mut">${loadingActs ? 'Trayendo tus actividades…' : 'Todavía no hay actividades. Grabá una con el reloj y esperá a que se sincronice.'}</div>`;
+  }
+  $('#v-corr').innerHTML = h;
+  $('#cs')?.addEventListener('click', stravaConnect);
+  $('#ra')?.addEventListener('click', () => loadActs(true));
+  bindActCards($('#v-corr'));
+}
+
+/* polilínea codificada (formato Google) */
+function decodePoly(str) {
+  let i = 0, lat = 0, lng = 0; const out = [];
+  while (i < str.length) {
+    for (const k of [0, 1]) {
+      let b, s = 0, r = 0;
+      do { b = str.charCodeAt(i++) - 63; r |= (b & 31) << s; s += 5; } while (b >= 32);
+      const d = (r & 1) ? ~(r >> 1) : (r >> 1);
+      if (k === 0) lat += d; else lng += d;
+    }
+    out.push([lat / 1e5, lng / 1e5]);
+  }
+  return out;
+}
+function chartSVG(raw, color, invert) {
+  const n = raw.length; if (n < 2) return '';
+  const step = Math.ceil(n / 160), v = [];
+  for (let i = 0; i < n; i += step) { const sl = raw.slice(i, i + step).filter(x => x != null && isFinite(x)); v.push(sl.length ? sl.reduce((a, b) => a + b) / sl.length : null); }
+  const f = v.filter(x => x != null); if (f.length < 2) return '';
+  let mn = Math.min(...f), mx = Math.max(...f); if (mx === mn) mx = mn + 1;
+  const W = 320, H = 110, P = 6, y = x => { let t = (x - mn) / (mx - mn); if (invert) t = 1 - t; return (H - P - t * (H - 2 * P)).toFixed(1); };
+  let d = '', area = '';
+  v.forEach((x, i) => { if (x == null) return; const X = (i / (v.length - 1) * W).toFixed(1); d += (d && v[i - 1] != null ? 'L' : 'M') + X + ',' + y(x); });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+let MAP = null;
+async function openDetail(id) {
+  $('#detail').classList.remove('hidden'); $('#d-title').textContent = 'Cargando…';
+  $('#d-body').innerHTML = '<div class="empty mut">Trayendo la actividad de Strava…</div>';
+  history.pushState({detail: id}, '');
+  try {
+    const [a, st] = await Promise.all([
+      strava(`/activities/${id}`),
+      strava(`/activities/${id}/streams?keys=latlng,time,heartrate,velocity_smooth,altitude&key_by_type=true`).catch(() => ({}))
+    ]);
+    renderDetail(a, st || {});
+  } catch (e) { $('#d-body').innerHTML = `<div class="empty mut">${esc(e.message)}</div>`; }
+}
+function renderDetail(a, st) {
+  $('#d-title').textContent = a.name;
+  const isRun = /Run/.test(a.sport_type || a.type);
+  const weight = (store.get('cr_weights', []).slice(-1)[0] || {}).kg;
+  let kcal = a.calories, kEst = false;
+  if (!kcal && weight) { kcal = weight * a.distance / 1000 * (isRun ? 1 : .6); kEst = true; }
+  const steps = a.average_cadence ? Math.round(a.average_cadence * 2 * a.moving_time / 60) : null;
+  const S = (k, v, u = '') => `<div class="stat"><div class="k">${k}</div><div class="v">${v}${u ? ` <small>${u}</small>` : ''}</div></div>`;
+  let h = `<div class="small mut" style="margin-bottom:10px">${fmtDate(a.start_date)}${a.device_name ? ' · ' + esc(a.device_name) : ''}</div>`;
+  h += `<div id="map"></div>`;
+  h += `<div class="stats">
+    ${S('Distancia', km(a.distance), 'km')}
+    ${S('Tiempo', mmss(a.moving_time))}
+    ${S('Ritmo', pace(a.moving_time, a.distance), '/km')}
+    ${S('Calorías', kcal ? Math.round(kcal) : '—', kcal ? (kEst ? 'kcal est.' : 'kcal') : '')}
+    ${S('Pulso medio', a.average_heartrate ? Math.round(a.average_heartrate) : '—', a.average_heartrate ? 'lpm' : '')}
+    ${S('Pulso máx', a.max_heartrate ? Math.round(a.max_heartrate) : '—', a.max_heartrate ? 'lpm' : '')}
+    ${S('Pasos', steps ? steps.toLocaleString('es-AR') : '—', steps ? 'aprox.' : '')}
+    ${S('Cadencia', a.average_cadence ? Math.round(a.average_cadence * 2) : '—', a.average_cadence ? 'ppm' : '')}
+    ${S('Desnivel', Math.round(a.total_elevation_gain || 0), 'm')}
+  </div>`;
+  if (a.elapsed_time > a.moving_time + 30) h += `<p class="small mut">Tiempo total con pausas: ${mmss(a.elapsed_time)}</p>`;
+  const hr = st.heartrate && st.heartrate.data;
+  if (hr && hr.length) {
+    h += `<h3>Pulso · ${Math.min(...hr)}–${Math.max(...hr)} lpm</h3><div class="card" style="padding:10px">${chartSVG(hr, 'var(--hr)')}</div>`;
+  }
+  const vel = st.velocity_smooth && st.velocity_smooth.data;
+  if (vel && vel.length) {
+    const p = vel.map(v => v > 1.1 ? 1000 / v : null);
+    h += `<h3>Ritmo (arriba = más rápido)</h3><div class="card" style="padding:10px">${chartSVG(p, 'var(--run)', true)}</div>`;
+  }
+  const sp = a.splits_metric || [];
+  if (sp.length) {
+    h += `<h3>Parciales por km</h3><div class="card" style="padding:4px 12px"><table><tr><th>Km</th><th>Ritmo</th><th>Pulso</th></tr>`;
+    sp.forEach((x, i) => { h += `<tr><td>${i + 1}${x.distance < 950 ? ` <span class="mut small">(${Math.round(x.distance)} m)</span>` : ''}</td><td>${pace(x.moving_time, x.distance)}</td><td>${x.average_heartrate ? Math.round(x.average_heartrate) : '—'}</td></tr>`; });
+    h += `</table></div>`;
+  }
+  h += `<p class="small mut">Datos de Strava · grabados por tu reloj. Los pasos salen de la cadencia promedio.</p>`;
+  $('#d-body').innerHTML = h;
+  const pts = (st.latlng && st.latlng.data && st.latlng.data.length) ? st.latlng.data : decodePoly((a.map && (a.map.polyline || a.map.summary_polyline)) || '');
+  if (!pts.length || !window.L) { $('#map').outerHTML = '<div class="card empty mut small">Sin recorrido GPS (¿cinta o GPS apagado?)</div>'; return; }
+  MAP = L.map('map', {zoomControl: false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {subdomains:'abcd', maxZoom:19, attribution:'© OpenStreetMap · © CARTO'}).addTo(MAP);
+  const line = L.polyline(pts, {color:'#ff7a1a', weight:4, opacity:.95}).addTo(MAP);
+  L.circleMarker(pts[0], {radius:7, color:'#fff', weight:2, fillColor:'#2ec4a0', fillOpacity:1}).addTo(MAP).bindTooltip('Salida');
+  L.circleMarker(pts[pts.length - 1], {radius:7, color:'#fff', weight:2, fillColor:'#ff4d6d', fillOpacity:1}).addTo(MAP).bindTooltip('Llegada');
+  MAP.fitBounds(line.getBounds(), {padding:[24, 24]});
+  setTimeout(() => MAP && MAP.invalidateSize(), 150);
+}
+function closeDetail() { $('#detail').classList.add('hidden'); if (MAP) { MAP.remove(); MAP = null; } }
+$('#d-back').addEventListener('click', () => history.back());
+window.addEventListener('popstate', () => { if (!$('#detail').classList.contains('hidden')) closeDetail(); });
+
+/* ================= Spotify (PKCE, sin secreto) ================= */
+const SP_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+const spTok = () => store.get('cr_spotify', null);
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function spotifyConnect() {
+  try {
+    const c = await config();
+    if (!c.spotify_client_id) return toast('Falta SPOTIFY_CLIENT_ID en Netlify');
+    const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+    const st = 'spotify-' + Math.random().toString(36).slice(2);
+    store.set('cr_oauth_state', st); store.set('cr_sp_verifier', verifier);
+    const q = new URLSearchParams({client_id:c.spotify_client_id, response_type:'code', redirect_uri:redirectUri(), scope:SP_SCOPES, code_challenge_method:'S256', code_challenge:challenge, state:st});
+    location.href = 'https://accounts.spotify.com/authorize?' + q;
+  } catch (e) { toast(e.message); }
+}
+async function spTokenReq(params) {
+  const r = await fetch('https://accounts.spotify.com/api/token', {method:'POST', headers:{'content-type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(params)});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('Spotify: ' + (d.error_description || d.error || r.status));
+  return d;
+}
+async function spotifyToken() {
+  let t = spTok(); if (!t) return null;
+  if (t.expires_at < Date.now() + 60000) {
+    const c = await config();
+    try {
+      const d = await spTokenReq({grant_type:'refresh_token', refresh_token:t.refresh_token, client_id:c.spotify_client_id});
+      t = {access_token:d.access_token, refresh_token:d.refresh_token || t.refresh_token, expires_at:Date.now() + d.expires_in * 1000};
+      store.set('cr_spotify', t);
+    } catch (e) { store.del('cr_spotify'); throw e; }
+  }
+  return t.access_token;
+}
+async function spotify(method, path, body) {
+  const tk = await spotifyToken(); if (!tk) throw new Error('Conectá Spotify en Ajustes');
+  const r = await fetch('https://api.spotify.com/v1' + path, {method, headers:{Authorization:'Bearer ' + tk, ...(body ? {'content-type':'application/json'} : {})}, body: body ? JSON.stringify(body) : undefined});
+  if (r.status === 204) return null;
+  if (r.status === 403) throw new Error('Spotify: el control requiere cuenta Premium');
+  if (r.status === 404) throw new Error('Abrí Spotify en el celu o el reloj y poné algo a sonar');
+  if (r.status === 401) { store.del('cr_spotify'); throw new Error('Spotify pidió volver a conectar'); }
+  if (!r.ok) throw new Error('Spotify respondió ' + r.status);
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+let NP = null, spPoll = null;
+async function refreshNowPlaying() {
+  if (!spTok()) return;
+  try { NP = await spotify('GET', '/me/player'); } catch (e) { NP = null; }
+  renderSpotify();
+}
+const SPI = {
+  prev:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
+};
+function renderSpotify() {
+  document.querySelectorAll('.sp-slot').forEach(slot => {
+    if (!spTok()) { slot.innerHTML = ''; return; }
+    const it = NP && NP.item, playing = NP && NP.is_playing;
+    const img = it && it.album && it.album.images && it.album.images.length ? it.album.images[it.album.images.length > 1 ? 1 : 0].url : '';
+    slot.innerHTML = `<div class="sp">${img ? `<img src="${esc(img)}" alt="">` : `<img alt="">`}
+      <div class="meta"><div class="ttl">${it ? esc(it.name) : 'Spotify'}</div><div class="art">${it ? esc((it.artists || []).map(x => x.name).join(', ')) : (NP ? 'Sin reproducción' : 'Poné música en el celu o el reloj')}</div></div>
+      <div class="ctl"><button data-sp="prev" aria-label="Anterior">${SPI.prev}</button><button class="pp" data-sp="${playing ? 'pause' : 'play'}" aria-label="Play/Pausa">${playing ? SPI.pause : SPI.play}</button><button data-sp="next" aria-label="Siguiente">${SPI.next}</button></div></div>`;
+  });
+  document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => spAction(b.dataset.sp));
+}
+async function spAction(a) {
+  try {
+    if (a === 'play') await spotify('PUT', '/me/player/play');
+    else if (a === 'pause') await spotify('PUT', '/me/player/pause');
+    else if (a === 'next') await spotify('POST', '/me/player/next');
+    else if (a === 'prev') await spotify('POST', '/me/player/previous');
+    setTimeout(refreshNowPlaying, 450);
+  } catch (e) { toast(e.message); }
+}
+function startSpPoll() { clearInterval(spPoll); if (!spTok()) return; refreshNowPlaying(); spPoll = setInterval(() => { if (document.visibilityState === 'visible') refreshNowPlaying(); }, 6000); }
+
+/* ================= callback OAuth ================= */
+async function handleOAuth() {
+  const u = new URL(location.href), code = u.searchParams.get('code'), err = u.searchParams.get('error'), state = u.searchParams.get('state') || '';
+  if (!code && !err) return;
+  history.replaceState({}, '', location.pathname);
+  const expected = store.get('cr_oauth_state', ''); store.del('cr_oauth_state');
+  if (err) return toast('Se canceló la conexión');
+  if (!state || state !== expected) return toast('La conexión no coincide, probá de nuevo');
+  try {
+    if (state.startsWith('strava-')) {
+      if (!(u.searchParams.get('scope') || '').includes('activity:read')) toast('Ojo: no diste permiso para leer actividades');
+      const r = await fetch(FN, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({action:'exchange', code})});
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'No se pudo conectar Strava');
+      store.set('cr_strava', d); toast('Strava conectado ✓'); loadActs(true);
+    } else if (state.startsWith('spotify-')) {
+      const c = await config();
+      const d = await spTokenReq({grant_type:'authorization_code', code, redirect_uri:redirectUri(), client_id:c.spotify_client_id, code_verifier:store.get('cr_sp_verifier', '')});
+      store.del('cr_sp_verifier');
+      store.set('cr_spotify', {access_token:d.access_token, refresh_token:d.refresh_token, expires_at:Date.now() + d.expires_in * 1000});
+      toast('Spotify conectado ✓'); startSpPoll();
+    }
+  } catch (e) { toast(e.message); }
+}
+
+/* ================= vista COMIDA ================= */
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const MENU = [
+  {d:'Avena cocida con leche descremada, banana en rodajas y canela',
+   a:'Pollo al horno (pata-muslo sin piel) con calabaza y zanahoria asadas',
+   m:'Yogur natural con una manzana picada',
+   c:'Tortilla de acelga y cebolla al horno + ensalada de tomate',
+   tip:'Cociná pollo de más: mañana va en la ensalada.'},
+  {d:'2 tostadas integrales con queso descremado y tomate + café o mate',
+   a:'Ensalada grande: el pollo de ayer desmenuzado, lechuga, tomate, zanahoria rallada y arroz integral',
+   m:'Una fruta + un huevo duro',
+   c:'Guiso de lentejas con zanahoria, cebolla, morrón y zapallo (sin chorizo ni panceta)',
+   tip:'Hacé guiso para 4 porciones: el resto es el almuerzo de mañana.'},
+  {d:'Yogur natural con avena y una fruta',
+   a:'Guiso de lentejas (lo de anoche)',
+   m:'Mate cocido o té con leche + 1 tostada integral con queso',
+   c:'Filet de merluza al horno con limón + puré mitad zapallo, mitad papa + ensalada',
+   tip:'La merluza congelada en filet suele ser el pescado más barato.'},
+  {d:'Avena cocida con leche y manzana rallada',
+   a:'Albóndigas de carne picada magra en salsa de tomate + fideos (porción chica) + ensalada',
+   m:'Yogur natural con una banana',
+   c:'Revuelto de zapallitos y cebolla con 2 huevos y queso descremado',
+   tip:'Hacé albóndigas de más y congelá la mitad para la semana que viene.'},
+  {d:'2 tostadas integrales con queso descremado + una fruta',
+   a:'Albóndigas que sobraron con verduras al vapor (brócoli, zanahoria, chauchas)',
+   m:'Una fruta + un huevo duro',
+   c:'Pizza casera en pan árabe integral: salsa de tomate, queso descremado, cebolla, morrón y orégano',
+   tip:'Viernes de pizza, pero casera: una sola por persona y con ensalada al lado.'},
+  {d:'Revuelto de 2 huevos con tomate + 1 tostada integral',
+   a:'Hamburguesas caseras (carne magra o lentejas) a la plancha, sin pan, con ensalada completa',
+   m:'Yogur natural con avena',
+   c:'Salteado de pollo con repollo, zanahoria, cebolla y morrón + arroz integral',
+   tip:'Las hamburguesas caseras se congelan bien de a una.'},
+  {d:'Desayuno tranquilo: café con leche + 2 tostadas integrales con queso y tomate',
+   a:'Comida libre: lo que tengan ganas, compartido y sin repetir plato. Ej.: asado con cortes magros y mucha ensalada',
+   m:'Una fruta',
+   c:'Sopa casera de verduras (zapallo, zanahoria, cebolla, puerro) con un huevo duro picado',
+   tip:'Domingo a la tarde: cocinen juntos lo de lunes y martes.'}
+];
+const COMPRAS = [
+  ['Verdulería', [['Zapallo / calabaza','2 kg'],['Zanahoria','2 kg'],['Cebolla','2 kg'],['Tomate','2 kg'],['Zapallitos','1 kg'],['Papa','1 kg'],['Acelga','2 atados'],['Lechuga','2 plantas'],['Repollo','1'],['Morrón','3'],['Limón','4'],['Banana','2 kg'],['Manzana','2 kg'],['Fruta de estación','2 kg']]],
+  ['Carnicería y pescadería', [['Pata-muslo de pollo','2 kg'],['Carne picada especial','1 kg'],['Filet de merluza congelado','600 g']]],
+  ['Almacén', [['Huevos','1 maple'],['Lentejas secas','500 g'],['Arroz integral','1 kg'],['Avena','1 kg'],['Fideos','500 g'],['Pan integral o pan árabe integral','2 paquetes'],['Puré de tomate','3 cajas'],['Aceite, sal, orégano, pimentón, canela','lo que falte']]],
+  ['Lácteos', [['Leche descremada','4 L'],['Yogur natural descremado','2 L'],['Queso cremoso descremado','500 g']]]
+];
+const fdDay = () => (new Date().getDay() + 6) % 7;
+let fdSel = null;
+function mealsHTML(i) {
+  const x = MENU[i];
+  return [['Desayuno', x.d], ['Almuerzo', x.a], ['Merienda', x.m], ['Cena', x.c]].map(([w, t]) => `<div class="meal"><div class="when">${w}</div><div class="what">${esc(t)}</div></div>`).join('');
+}
+function foodToday() {
+  const i = fdDay();
+  return `<div class="card"><div class="eyebrow fd">Hoy comemos · ${DIAS[i]}</div>
+    <div class="meal"><div class="when">Almuerzo</div><div class="what">${esc(MENU[i].a)}</div></div>
+    <div class="meal"><div class="when">Cena</div><div class="what">${esc(MENU[i].c)}</div></div>
+    <button class="btn sm" data-go="food" style="margin-top:8px">Ver menú completo ›</button></div>`;
+}
+function renderFood() {
+  const today = fdDay(); if (fdSel === null) fdSel = today;
+  const got = store.get('cr_compras', {});
+  let h = `<div class="card"><div class="eyebrow fd">Menú para dos · ${DIAS[fdSel]}</div>
+    <div class="daytabs">${DIAS.map((d, i) => `<button data-day="${i}" class="${i === fdSel ? 'on' : ''} ${i === today ? 'today' : ''}">${d.slice(0, 3)}</button>`).join('')}</div>
+    ${mealsHTML(fdSel)}
+    <p class="small" style="color:var(--walk);margin:10px 0 0">💡 ${esc(MENU[fdSel].tip)}</p></div>`;
+  h += `<h3>Cómo servir el plato</h3><div class="card"><div class="plate">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#1a222c" stroke="#26303d" stroke-width="2"/>
+      <path d="M50 50 L50 6 A44 44 0 0 1 50 94 Z" fill="#2ec4a0"/>
+      <path d="M50 50 L50 94 A44 44 0 0 1 6 50 Z" fill="#ff7a1a"/>
+      <path d="M50 50 L6 50 A44 44 0 0 1 50 6 Z" fill="#e8c35a"/></svg>
+    <div class="small"><div><b style="color:var(--walk)">Mitad: verduras</b>, crudas o cocidas. Repetí todo lo que quieras de esta parte.</div>
+      <div style="margin-top:6px"><b style="color:var(--run)">Un cuarto: proteína</b>. Pollo, carne magra, pescado, huevo o legumbres. Del tamaño de tu palma.</div>
+      <div style="margin-top:6px"><b style="color:#e8c35a">Un cuarto: almidón</b>. Arroz, papa, fideos o pan. Del tamaño de tu puño.</div></div></div>
+    <p class="small mut" style="margin:12px 0 0">Cocinan lo mismo para los dos. Cada uno se sirve según su objetivo: Rubén puede sumar más almidón si no busca bajar de peso.</p></div>`;
+  h += `<h3>Reglas claras</h3><div class="card small"><ol class="steps">
+    <li><b>Para tomar: agua.</b> Gaseosas comunes y jugos, afuera. Las versiones light, solo de vez en cuando.</li>
+    <li><b>4 comidas y nada de picar en el medio.</b> Si hay hambre, una fruta o un huevo duro.</li>
+    <li><b>Afuera:</b> fritos, facturas, galletitas, fiambres, embutidos y snacks.</li>
+    <li><b>Mitad del plato de verdura</b>, en almuerzo y cena, siempre.</li>
+    <li><b>Una comida libre por semana</b>: se disfruta, pero sin atracón ni segunda vuelta.</li>
+    <li><b>Alcohol:</b> solo en la comida libre, y poco.</li>
+    <li><b>Cenar al menos 2 horas antes de dormir.</b></li>
+    <li><b>Mate y café, sin azúcar y con moderación.</b> Por las extrasístoles, preguntale al cardiólogo cuánto.</li></ol></div>`;
+  const total = COMPRAS.reduce((n, g) => n + g[1].length, 0), have = Object.values(got).filter(Boolean).length;
+  h += `<h3>Lista de compras semanal · para 2</h3><div class="card"><div class="row" style="margin-bottom:6px"><div class="grow small mut">${have} de ${total} en el changuito</div><button class="btn sm" id="shopreset">Nueva semana</button></div>`;
+  COMPRAS.forEach(([g, items]) => {
+    h += `<div class="small" style="color:var(--walk);font-weight:700;margin-top:12px">${g}</div><div class="shop">`;
+    items.forEach(([n, q]) => { const k = g + '|' + n; h += `<label class="${got[k] ? 'got' : ''}"><input type="checkbox" data-shop="${esc(k)}" ${got[k] ? 'checked' : ''}><span>${esc(n)}</span><span class="qty">${q}</span></label>`; });
+    h += `</div>`;
+  });
+  h += `</div>`;
+  h += `<h3>Para gastar menos</h3><div class="card small"><ul class="steps">
+    <li>Verdura y fruta, en la verdulería del barrio o el Mercado Central: rinden mucho más que en el súper.</li>
+    <li>Pollo entero o pata-muslo, y legumbres secas: las proteínas más baratas.</li>
+    <li>Domingo de cocina: dejen hecho el guiso, el pollo y las albóndigas, y congelen porciones.</li>
+    <li>Segundas marcas en arroz, avena, fideos, puré de tomate y lácteos.</li></ul></div>`;
+  h += `<p class="small mut" style="text-align:center">Es un menú de referencia, no un plan médico. Con tus antecedentes, lo ideal es ajustarlo con un/a nutricionista.</p>`;
+  $('#v-food').innerHTML = h;
+  $('#v-food').querySelectorAll('[data-day]').forEach(b => b.addEventListener('click', () => { fdSel = +b.dataset.day; renderFood(); }));
+  $('#v-food').querySelectorAll('[data-shop]').forEach(c => c.addEventListener('change', () => {
+    const m = store.get('cr_compras', {}); m[c.dataset.shop] = c.checked; store.set('cr_compras', m);
+    c.closest('label').classList.toggle('got', c.checked);
+    renderFood();
+  }));
+  $('#shopreset').addEventListener('click', () => { store.set('cr_compras', {}); renderFood(); });
+}
+
+/* ================= vista PROGRESO ================= */
+const weekStart = d => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x.getTime(); };
+function renderProg() {
+  const done = doneMap(), n = SESS.filter(s => done[s.id]).length, next = SESS.find(s => !done[s.id]);
+  const nf = FIDS.filter(x => done[x.id]).length, nextF = FIDS.find(x => !done[x.id]);
+  let h = `<div class="card"><div class="row"><div class="grow"><div class="eyebrow">Trote</div><h2>${n} de ${SESS.length} sesiones</h2></div><div class="pill">${next ? 'Semana ' + next.w : 'Completo'}</div></div>
+    <div class="prog"><i style="width:${n / SESS.length * 100}%"></i></div>
+    <div class="row" style="margin-top:16px"><div class="grow"><div class="eyebrow fz">Fuerza</div><h2>${nf} de ${FIDS.length} sesiones</h2></div><div class="pill">${nextF ? 'Semana ' + nextF.w : 'Completo'}</div></div>
+    <div class="prog"><i style="width:${nf / FIDS.length * 100}%;background:var(--fz)"></i></div></div>`;
+  const list = (store.get('cr_acts', null) || {}).list || [];
+  if (list.length) {
+    const now = weekStart(Date.now()), W = 7 * 864e5, wk = Array.from({length:8}, (_, i) => ({t: now - (7 - i) * W, m: 0}));
+    list.forEach(a => { const ws = weekStart(a.start_date); const b = wk.find(x => Math.abs(x.t - ws) < 12 * 36e5); if (b) b.m += a.distance; });
+    const mx = Math.max(1000, ...wk.map(x => x.m));
+    const month = new Date(); const mList = list.filter(a => { const d = new Date(a.start_date); return d.getMonth() === month.getMonth() && d.getFullYear() === month.getFullYear(); });
+    const mDist = mList.reduce((s, a) => s + a.distance, 0), mTime = mList.reduce((s, a) => s + a.moving_time, 0);
+    h += `<h3>Este mes</h3><div class="stats"><div class="stat"><div class="k">Distancia</div><div class="v">${km(mDist)} <small>km</small></div></div><div class="stat"><div class="k">Tiempo</div><div class="v">${mmss(mTime)}</div></div><div class="stat"><div class="k">Salidas</div><div class="v">${mList.length}</div></div></div>`;
+    h += `<h3>Kilómetros por semana</h3><div class="card"><div class="bars">${wk.map(x => `<div><span>${x.m ? (x.m/1000).toFixed(1) : ''}</span><i style="height:${x.m / mx * 85}%"></i><span>${new Date(x.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})}</span></div>`).join('')}</div></div>`;
+  }
+  const ws = store.get('cr_weights', []);
+  h += `<h3>Peso</h3><div class="card"><div class="row"><input type="number" id="wkg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="kg de hoy"><button class="btn pri" id="wsave">Guardar</button></div>`;
+  if (ws.length) {
+    const first = ws[0], last = ws[ws.length - 1], diff = last.kg - first.kg;
+    h += `<div class="row" style="margin-top:14px"><div class="grow"><div class="small mut">Actual</div><div style="font-size:24px;font-weight:700">${last.kg.toString().replace('.', ',')} kg</div></div>
+      ${ws.length > 1 ? `<div style="text-align:right"><div class="small mut">Desde ${new Date(first.d).toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</div><div style="font-size:18px;font-weight:700;color:${diff <= 0 ? 'var(--walk)' : 'var(--run)'}">${diff > 0 ? '+' : ''}${diff.toFixed(1).replace('.', ',')} kg</div></div>` : ''}</div>`;
+    if (ws.length > 1) h += chartSVG(ws.map(x => x.kg), 'var(--walk)');
+    h += `<div class="small mut" style="margin-top:8px">${ws.slice(-5).reverse().map(x => `${new Date(x.d).toLocaleDateString('es-AR',{day:'numeric',month:'short'})}: ${String(x.kg).replace('.', ',')} kg`).join(' · ')}</div>`;
+  }
+  h += `</div>`;
+  $('#v-prog').innerHTML = h;
+  $('#wsave').addEventListener('click', () => {
+    const v = parseFloat(String($('#wkg').value).replace(',', '.'));
+    if (!(v > 30 && v < 300)) return toast('Ingresá un peso válido');
+    const a = store.get('cr_weights', []), today = new Date().toDateString();
+    const i = a.findIndex(x => new Date(x.d).toDateString() === today);
+    if (i >= 0) a[i].kg = v; else a.push({d: new Date().toISOString(), kg: v});
+    store.set('cr_weights', a); toast('Peso guardado'); renderProg();
+  });
+}
+
+/* ================= vista AJUSTES ================= */
+function renderAj() {
+  const s = stravaTok(), sp = spTok();
+  let h = `<h3>Conexiones</h3>
+  <div class="card"><div class="row"><div class="grow"><b>Strava</b><div class="small mut">${s ? 'Conectado' + (s.athlete ? ' como ' + esc(s.athlete.firstname) : '') : 'Trae mapa, pulso, calorías y pasos del reloj'}</div></div>
+    ${s ? '<button class="btn sm" id="ds">Desconectar</button>' : '<button class="btn sm pri" id="cs2">Conectar</button>'}</div></div>
+  <div class="card"><div class="row"><div class="grow"><b>Spotify</b><div class="small mut">${sp ? 'Conectado · control de música activo' : 'Controlá la música desde la app (requiere Premium)'}</div></div>
+    ${sp ? '<button class="btn sm" id="dsp">Desconectar</button>' : '<button class="btn sm spot" id="csp">Conectar</button>'}</div></div>
+  <h3>Sincronizar el Galaxy Watch</h3>
+  <div class="card small"><ol class="steps"><li>En el reloj, iniciá <b>Ejercicio → Correr</b> (o Caminar) al empezar la sesión.</li><li>Al terminar, guardalo: se sube a <b>Samsung Health</b> en el celu.</li><li>Samsung Health lo pasa a <b>Strava</b> (Ajustes → Servicios conectados).</li><li>En Rumbo, pestaña Corridas → Actualizar.</li></ol></div>
+  <h3>Datos</h3>
+  <div class="card"><div class="row wrap"><button class="btn sm" id="exp">Exportar respaldo</button><label class="btn sm">Importar<input type="file" id="imp" accept="application/json" hidden></label><button class="btn sm ghost" id="rst" style="color:var(--hr)">Reiniciar plan</button></div>
+  <p class="small mut" style="margin:10px 0 0">Tu plan y tu peso se guardan solo en este teléfono. Exportá un respaldo de vez en cuando.</p></div>
+  <p class="small mut" style="text-align:center;margin-top:20px">Rumbo · versión 1.2</p>`;
+  $('#v-aj').innerHTML = h;
+  $('#cs2')?.addEventListener('click', stravaConnect);
+  $('#ds')?.addEventListener('click', () => { if (confirm('¿Desconectar Strava?')) { store.del('cr_strava'); store.del('cr_acts'); renderAll(); } });
+  $('#csp')?.addEventListener('click', spotifyConnect);
+  $('#dsp')?.addEventListener('click', () => { store.del('cr_spotify'); NP = null; clearInterval(spPoll); renderAll(); });
+  $('#exp').addEventListener('click', () => {
+    const data = {app:'rumbo', v:1, done:doneMap(), weights:store.get('cr_weights', [])};
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
+    a.download = `rumbo-respaldo-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  });
+  $('#imp').addEventListener('change', async e => {
+    try { const d = JSON.parse(await e.target.files[0].text()); if (d.app !== 'rumbo') throw 0;
+      store.set('cr_done', d.done || {}); store.set('cr_weights', d.weights || []); toast('Respaldo importado'); renderAll();
+    } catch { toast('El archivo no es un respaldo de Rumbo'); }
+  });
+  $('#rst').addEventListener('click', () => { if (confirm('¿Borrar el avance del plan? (no borra el peso)')) { store.set('cr_done', {}); renderAll(); } });
+}
+
+/* ================= navegación ================= */
+function show(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === 'v-' + v));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window.scrollTo(0, 0);
+  if (v === 'corr') loadActs(false);
+}
+document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.v)));
+$('#gear').addEventListener('click', () => show('aj'));
+function renderAll() { renderHoy(); renderFuerza(); renderFood(); renderCorr(); renderProg(); renderAj(); renderSpotify(); }
+
+(async function init() {
+  renderAll();
+  await handleOAuth();
+  renderAll();
+  const saved = store.get('cr_timer', null);
+  if (saved && findSess(saved.id, saved.lugar) && Date.now() - saved.startedAt < 4 * 3600e3) { T = saved; T.idx = -2; openTimer(); }
+  else store.del('cr_timer');
+  startSpPoll();
+  if (stravaTok()) loadActs(false);
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('speechSynthesis' in window) speechSynthesis.getVoices();
+})();
+</script>
+</body>
+</html>
